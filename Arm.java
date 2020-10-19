@@ -8,6 +8,10 @@ import java.io.File;
  * A class to generate reports on logs and databases to make the life of the Gateway Rentals Manager 
  *   / Asst. Production Manager easier. 
  * 
+ * By Tony Tambasco <tambascot@yahoo.com>
+ * 
+ * This is Free Software published under the terms of the Gnu Public Liscence (GPL) v.2
+ * 
  * @author Tony Tambasco
  * @author tambascot@yahoo.com
  *
