@@ -1,6 +1,7 @@
 package arm;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import org.jdom.*;
 import org.jdom.input.*;
@@ -89,18 +90,36 @@ public class Arm {
                     }
                     
                     recordsMap.put(currSeq, record);
-                    
                 }
-                
-                /*
-                 * If execution went as planned, the message of the first entry will being "Beginning update on" and the
-                 * message of the third entry will begin "Update complete at". If there are more entries, there may have
-                 * been non-critical problems, and so we should report that. If the first entry and the last entry say
-                 * anything other than those messages, there was a critical problem, and we should note that. 
-                 */
 			
-			} // end try
-		} // end for
+			}
+			catch (IOException e) {
+                e.printStackTrace();
+            }
+            catch (JDOMException j) { 
+                j.printStackTrace();
+            }
+			
+            /*
+             * If execution went as planned, the message of the first entry will being "Beginning update on" and the
+             * message of the third entry will begin "Update complete at". If the first entry and the last entry say
+             * anything other than those messages, there was a critical problem, and we should report that first. If there
+             * are more than three entries, there may be informational messages or non-critical problems to report.
+             */
+            
+            /*
+             * Was there a critical problem?
+             */
+            
+            /*
+             * Was there a anything worth looking at?
+             */
+            
+            /*
+             * If all is well, report that all is well.
+             */
+		
+		} // end for each log file found
 		
 		return logReport;
 	}
