@@ -1,6 +1,7 @@
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -11,8 +12,12 @@ import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 import org.w3c.dom.Element;
+import org.xml.sax.EntityResolver;
 
 import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
+
+import jdk.internal.org.xml.sax.InputSource;
+import jdk.internal.org.xml.sax.SAXException;
 
 /**
  * A.R.M. - Asst. Rentals Manager
@@ -39,6 +44,7 @@ public class Arm {
     };
     
 	
+	@SuppressWarnings("deprecation")
 	private static Map<String, String> updateLogReport(File logDirectory) {
 		
 		Map<String, String> logReport = new HashMap<String, String>();
@@ -47,12 +53,28 @@ public class Arm {
 		
 		for (String logfile : filepaths) {
 			
+			String logPath = logDirectory.getAbsolutePath() 
+					+ "\\" + logfile;
+			
+			System.out.println(logPath);
+			
 			try{
                 // Open and parse the file into an HOH
                 SAXBuilder parser = new SAXBuilder();
                 
+                parser.setEntityResolver(new EntityResolver() {
+               	 @Override
+               	 public org.xml.sax.InputSource resolveEntity(String publicId, String systemId) throws IOException {
+               	  if (systemId.contains("logger.dtd")) {
+               	   return new org.xml.sax.InputSource(new StringReader(""));
+               	  } else {
+               	   return null;
+               	  }
+               	 }
+               	});
+                
                 // Create a document given the URI to the file
-                Document doc = parser.build(logfile);
+                Document doc = parser.build(logPath);
 
                 // Get the root node of the document
                 org.jdom2.Element root = doc.getRootElement();
@@ -67,16 +89,18 @@ public class Arm {
                  * sequence. 
                  * 
                  */
-                HashMap<Integer, Element> recordsMap = new HashMap<Integer, Element>();
+                HashMap<Integer, org.jdom2.Element> recordsMap = new HashMap<Integer, org.jdom2.Element>();
                 
                 int firstSeq = 0;
                 int lastSeq  = firstSeq;
                 		
                 
                 for (int i = 0; i < records.size(); i++) {
-                    Element record = (Element) records.get(i);
+                    org.jdom2.Element record = records.get(i);
+ 
+                    int currSeq = Integer.parseInt(record.getChild("sequence").getValue());
                     
-                    int currSeq = Integer.parseInt(record.getElementsByTagName("sequence").toString());
+                    // System.out.println(record.getChild("sequence").getValue());
                     
                     if (currSeq > lastSeq) {
                     	lastSeq = currSeq;
@@ -96,11 +120,11 @@ public class Arm {
                  * Was there a critical problem?
                  */
     			
-                Element firstRec = recordsMap.get(firstSeq);
-                Element lastRec	 = recordsMap.get(lastSeq);
+                org.jdom2.Element firstRec = recordsMap.get(firstSeq);
+                org.jdom2.Element lastRec	 = recordsMap.get(lastSeq);
                 
-                String firstMess = firstRec.getElementsByTagName("message").toString();
-                String lastMess  = lastRec.getElementsByTagName("message").toString();
+                String firstMess = firstRec.getChild("message").getValue();
+                String lastMess  = lastRec.getChild("message").getValue();
                 
                 if (! firstMess.startsWith("Beginning update on")
                 		&& ! lastMess.startsWith("Update complete at")) {
