@@ -3,6 +3,8 @@ package arm;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Map;
+
 import org.jdom.*;
 import org.jdom.input.*;
 import org.jdom.output.XMLOutputter;
@@ -46,7 +48,7 @@ public class Arm {
 	
 	private Map updateLogReport(File logDirectory) {
 		
-		Map logReport = new Map;
+		Map<String, String> logReport = new Map<String, String>();
 		
 		String filepaths[] = logDirectory.list(logFilter);
 		
@@ -72,7 +74,7 @@ public class Arm {
                  * sequence. 
                  * 
                  */
-                SortedMap<Int, Element> recordsMap = new TreeMap<Int, Element>();
+                SortedMap<Int, Element> recordsMap = new Map<Int, Element>();
                 
                 int firstSeq = 0;
                 int lastSeq  = firstSeq;
@@ -81,8 +83,6 @@ public class Arm {
                 for (int i = 0; i < records.size(); i++) {
                     Element record = (Element) records.get(i);
                     
-                    // Map<String, String> recMap = new HashMap<String, String>();
-                    
                     int currSeq = (int) record.getElementsByTagName("sequence");
                     
                     if (currSeq > lastSeq) {
@@ -90,6 +90,45 @@ public class Arm {
                     }
                     
                     recordsMap.put(currSeq, record);
+                    recordsMap.
+                }
+                
+                /*
+                 * If execution went as planned, the message of the first entry will being "Beginning update on" and the
+                 * message of the third entry will begin "Update complete at". If the first entry and the last entry say
+                 * anything other than those messages, there was a critical problem, and we should report that first. If there
+                 * are more than three entries, there may be informational messages or non-critical problems to report.
+                 */
+                
+                /*
+                 * Was there a critical problem?
+                 */
+    			
+                Element firstRec = recordsMap.get(firstSeq);
+                Element lastRec	 = recordsMao.get(lastSeq);
+                
+                String firstMess = firstRec.getElementsByTagName("message");
+                String lastMess  = lastRec.getElementsByTagName("message");
+                
+                if (! firstMess.startsWith("Beginning update on")
+                		&& ! lastMess.startsWith("Update complete at")) {
+                	logReport.put(logFile, "Critical error! Please inspect log file.");
+                }
+                      
+                /*
+                 * Was there a anything worth looking at?
+                 */
+                
+                else if (lastSeq > 2) {
+                	logReport.put(logFile, "Update successfull, but with errors. Please check log.");
+                }
+                
+                /*
+                 * If all is well, report that all is well.
+                 */
+                
+                else {
+                	logReport.put(logFile, "Update successfull");
                 }
 			
 			}
@@ -99,25 +138,7 @@ public class Arm {
             catch (JDOMException j) { 
                 j.printStackTrace();
             }
-			
-            /*
-             * If execution went as planned, the message of the first entry will being "Beginning update on" and the
-             * message of the third entry will begin "Update complete at". If the first entry and the last entry say
-             * anything other than those messages, there was a critical problem, and we should report that first. If there
-             * are more than three entries, there may be informational messages or non-critical problems to report.
-             */
-            
-            /*
-             * Was there a critical problem?
-             */
-            
-            /*
-             * Was there a anything worth looking at?
-             */
-            
-            /*
-             * If all is well, report that all is well.
-             */
+		
 		
 		} // end for each log file found
 		
