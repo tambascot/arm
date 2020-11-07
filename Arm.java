@@ -1,13 +1,15 @@
-package arm;
-
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedMap;
 
-import org.jdom.*;
-import org.jdom.input.*;
-import org.jdom.output.XMLOutputter;
+import org.jdom2.Document;
+import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
 import org.w3c.dom.Element;
 
 import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
@@ -29,26 +31,17 @@ import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
 
 public class Arm {
 	
-	FilenameFilter logFilter = new FilenameFilter() {
+	static FilenameFilter logFilter = new FilenameFilter() {
         @Override
         public boolean accept(File f, String name) {
             return name.endsWith(".log");
         }
     };
     
-    class SortBySequence implements Comparator
-    { 
-        // Used for sorting in ascending order of 
-        // roll number 
-        public int compare(Student a, Student b) 
-        { 
-            return a.rollno - b.rollno; 
-        } 
-    } 
 	
-	private Map updateLogReport(File logDirectory) {
+	private static Map<String, String> updateLogReport(File logDirectory) {
 		
-		Map<String, String> logReport = new Map<String, String>();
+		Map<String, String> logReport = new HashMap<String, String>();
 		
 		String filepaths[] = logDirectory.list(logFilter);
 		
@@ -62,9 +55,9 @@ public class Arm {
                 Document doc = parser.build(logfile);
 
                 // Get the root node of the document
-                Element root = doc.getRootElement();
+                org.jdom2.Element root = doc.getRootElement();
 
-                List records = root.getChildren("record");
+                java.util.List<org.jdom2.Element> records = root.getChildren("record");
                 
                 /* We need to make sure we're getting the records in order, and to do that we
                  * need to create a sorted map, interate over the list of records, extract the sequence
@@ -74,7 +67,7 @@ public class Arm {
                  * sequence. 
                  * 
                  */
-                SortedMap<Int, Element> recordsMap = new Map<Int, Element>();
+                HashMap<Integer, Element> recordsMap = new HashMap<Integer, Element>();
                 
                 int firstSeq = 0;
                 int lastSeq  = firstSeq;
@@ -83,14 +76,13 @@ public class Arm {
                 for (int i = 0; i < records.size(); i++) {
                     Element record = (Element) records.get(i);
                     
-                    int currSeq = (int) record.getElementsByTagName("sequence");
+                    int currSeq = Integer.parseInt(record.getElementsByTagName("sequence").toString());
                     
                     if (currSeq > lastSeq) {
                     	lastSeq = currSeq;
                     }
                     
                     recordsMap.put(currSeq, record);
-                    recordsMap.
                 }
                 
                 /*
@@ -105,14 +97,14 @@ public class Arm {
                  */
     			
                 Element firstRec = recordsMap.get(firstSeq);
-                Element lastRec	 = recordsMao.get(lastSeq);
+                Element lastRec	 = recordsMap.get(lastSeq);
                 
-                String firstMess = firstRec.getElementsByTagName("message");
-                String lastMess  = lastRec.getElementsByTagName("message");
+                String firstMess = firstRec.getElementsByTagName("message").toString();
+                String lastMess  = lastRec.getElementsByTagName("message").toString();
                 
                 if (! firstMess.startsWith("Beginning update on")
                 		&& ! lastMess.startsWith("Update complete at")) {
-                	logReport.put(logFile, "Critical error! Please inspect log file.");
+                	logReport.put(logfile, "Critical error! Please inspect log file.");
                 }
                       
                 /*
@@ -120,7 +112,7 @@ public class Arm {
                  */
                 
                 else if (lastSeq > 2) {
-                	logReport.put(logFile, "Update successfull, but with errors. Please check log.");
+                	logReport.put(logfile, "Update successfull, but with errors. Please check log.");
                 }
                 
                 /*
@@ -128,7 +120,7 @@ public class Arm {
                  */
                 
                 else {
-                	logReport.put(logFile, "Update successfull");
+                	logReport.put(logfile, "Update successfull");
                 }
 			
 			}
@@ -157,6 +149,11 @@ public class Arm {
 	
 	public static void main(String[] args) {
 		
+		File directory = new File("C:\\\\Users\\production\\.SnapshotFiles");
+		
+		Map<String, String> updateLogReports = updateLogReport(directory);
+		
+		updateLogReports.forEach((k, v) -> System.out.println((k + ":" + v)));
 	}
 
 }
