@@ -135,7 +135,7 @@ public class Arm {
                  * Was there a anything worth looking at?
                  */
                 
-                else if (lastSeq > 2) {
+                else if (lastSeq > 4) {
                 	logReport.put(logfile, "Update successfull, but with errors. Please check log.");
                 }
                 
