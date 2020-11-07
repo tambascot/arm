@@ -43,7 +43,9 @@ public class Arm {
         } 
     } 
 	
-	private boolean updateLogReport(File logDirectory) {
+	private Map updateLogReport(File logDirectory) {
+		
+		Map logReport = new Map;
 		
 		String filepaths[] = logDirectory.list(logFilter);
 		
@@ -100,7 +102,7 @@ public class Arm {
 			} // end try
 		} // end for
 		
-		return true;
+		return logReport;
 	}
 	
 	private boolean upcomingRentalsReport(File rentalsDatabase) {
