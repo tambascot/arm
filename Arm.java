@@ -127,7 +127,7 @@ public class Arm {
                 String lastMess  = lastRec.getChild("message").getValue();
                 
                 if (! firstMess.startsWith("Beginning update on")
-                		&& ! lastMess.startsWith("Update complete at")) {
+                		|| ! lastMess.startsWith("Update complete at")) {
                 	logReport.put(logfile, "Critical error! Please inspect log file.");
                 }
                       
@@ -173,11 +173,24 @@ public class Arm {
 	
 	public static void main(String[] args) {
 		
+		/*
+		 * Process command line options. 
+		 */
+		
+		/*
+		 * Test all input files / directories to make sure they exist and are readable.
+		 */
+		
 		File directory = new File("C:\\\\Users\\production\\.SnapshotFiles");
 		
 		Map<String, String> updateLogReports = updateLogReport(directory);
 		
-		updateLogReports.forEach((k, v) -> System.out.println((k + ":" + v)));
+		// Uncomment for debugging log report.
+		// updateLogReports.forEach((k, v) -> System.out.println((k + ": " + v)));
+		
+		/*
+		 * Send an email to production incorporating the results of all reports into the message body.
+		 */
 	}
 
 }
