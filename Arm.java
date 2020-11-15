@@ -1,6 +1,9 @@
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
@@ -11,6 +14,7 @@ import java.util.SortedMap;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.List;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -25,10 +29,26 @@ import org.jdom2.input.SAXBuilder;
 import org.w3c.dom.Element;
 import org.xml.sax.EntityResolver;
 
-import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
+// import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
 
 import jdk.internal.org.xml.sax.InputSource;
 import jdk.internal.org.xml.sax.SAXException;
+
+import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
+import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
+import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.util.store.FileDataStoreFactory;
+import com.google.api.services.gmail.Gmail;
+import com.google.api.services.gmail.GmailScopes;
+import com.google.api.services.gmail.model.Label;
+import com.google.api.services.gmail.model.ListLabelsResponse;
+
 
 /**
  * A.R.M. - Asst. Rentals Manager
@@ -48,7 +68,9 @@ import jdk.internal.org.xml.sax.SAXException;
 public class Arm {
 	
 	private static final String VERSION = "1.0.0.0";
-	
+	private static final List<String> SCOPES = Collections.singletonList(GmailScopes.GMAIL_LABELS);
+    private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
+
 	static FilenameFilter logFilter = new FilenameFilter() {
         @Override
         public boolean accept(File f, String name) {
@@ -133,8 +155,8 @@ public class Arm {
                  * Was there a critical problem?
                  */
     			
-                org.jdom2.Element firstRec = recordsMap.get(firstSeq);
-                org.jdom2.Element lastRec	 = recordsMap.get(lastSeq);
+                org.jdom2.Element firstRec 	= recordsMap.get(firstSeq);
+                org.jdom2.Element lastRec	= recordsMap.get(lastSeq);
                 
                 String firstMess = firstRec.getChild("message").getValue();
                 String lastMess  = lastRec.getChild("message").getValue();
@@ -184,14 +206,42 @@ public class Arm {
 		return true;
 	}
 	
+    /**
+     * Creates an authorized Credential object.
+     * @param HTTP_TRANSPORT The network HTTP Transport.
+     * @param JsonCredentialsFile The JSON file with Google App Console Credentials
+     * @param Tokens_DIRECTORY_PATH The path to the directory containing authentication tokens.
+     * @return An authorized Credential object.
+     * @throws IOException If the credentials.json file cannot be found.
+     */
+    private static Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT, 
+    		File JsonCredentialsFile, String TOKENS_DIRECTORY_PATH) throws IOException {
+        // Load client secrets.
+
+    	InputStream in = new FileInputStream(JsonCredentialsFile);
+        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
+
+        // Build flow and trigger user authorization request.
+        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
+                HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
+                .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
+                .setAccessType("offline")
+                .build();
+        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(9001).build();
+        return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
+    }
+	
 	public static void main(String[] args) {
 		
 		/*
 		 * Declare variables
 		 */
 		
-		File logDirectory = null;
+		File logDirectory					 = null;
 		Map<String, String> updateLogReports = null;
+		String recipientAddress 			 = null;
+		String tokenssFilePath	 		 	 = null;
+	    File jsonCredentialsFile			 = null;
 		
 		/*
 		 * Process command line options. 
@@ -208,10 +258,25 @@ public class Arm {
 		Option logDirPath = new Option("l", "logs", true, 
 				"Specify a log directory.");
 		options.addOption(logDirPath);
-		  
+		
+		Option emailReport = new Option("e", "email", true, 
+				"Specify an email address to send the report to.");
+		options.addOption(emailReport);
+		
+		Option tokenDirPath = new Option("t", "token", true, 
+				"Specify a directory for authentication tokens (other than default). Required for sending email.");
+		options.addOption(tokenDirPath);
+	      
+		Option jsonFile = new Option("j", "json", true, 
+				"Specify a JSON file with Google Application authentication data (other than default)."
+					+ " Required for sending email.");
+		options.addOption(jsonFile);
+		
+		/*
 		Option databaseFile = new Option("d", "database", true, 
 				"Specify a database file to run reports on.");
 		options.addOption(databaseFile);
+		*/
 
 	
 		CommandLineParser parser = new DefaultParser();
@@ -250,6 +315,23 @@ public class Arm {
 			if (cmd.hasOption("l")) {
 				logDirectory = new File(cmd.getOptionValue("l"));
 			}
+			
+			if (cmd.hasOption("e")) {
+				
+				/*
+				 * Sending an email requires we also have a JSON file and an auth token to work with. If those
+				 * were not specified on the command line, print an error and exit with error status. 
+				 */
+				if (!cmd.hasOption("j") && !cmd.hasOption("t")) {
+					System.err.println("Error, JSON file and token directory must be specified to send email");
+					System.exit(1);
+				}
+				
+				recipientAddress 	= cmd.getOptionValue("e");
+				tokenssFilePath	 	= cmd.getOptionValue("t");
+			    jsonCredentialsFile	= new File(cmd.getOptionValue("j"));
+				
+			}
 		      
 		} catch (ParseException e) {
 			System.out.println(e.getMessage());
@@ -270,8 +352,14 @@ public class Arm {
 	      }
 		
 		/*
-		 * Send an email to production incorporating the results of all reports into the message body.
+		 * Send an email to designated user incorporating the results of all reports into the message body.
 		 */
+	      
+	      if (recipientAddress != null) {
+	    	  
+	    	  
+	    	  
+	      }
 	      
 	      if (updateLogReports != null) {
 	    	  
