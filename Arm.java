@@ -2,12 +2,23 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.StringReader;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
@@ -35,6 +46,8 @@ import jdk.internal.org.xml.sax.SAXException;
  */
 
 public class Arm {
+	
+	private static final String VERSION = "1.0.0.0";
 	
 	static FilenameFilter logFilter = new FilenameFilter() {
         @Override
@@ -174,19 +187,89 @@ public class Arm {
 	public static void main(String[] args) {
 		
 		/*
+		 * Declare variables
+		 */
+		
+		File logDirectory = null;
+		Map<String, String> updateLogReports = null;
+		
+		/*
 		 * Process command line options. 
 		 */
+		
+		 Options options = new Options();
+
+	      Option about = new Option("a", "about", false, "Print about SoftgoodSnapshot and exit.");
+	      options.addOption(about);
+
+	      Option help = new Option("h", "help", false, "Print this help menu and exit.");
+	      options.addOption(help);  
+	      
+	      Option logDirPath = new Option("l", "logs", true, 
+	    		  "Specify a log directory.");
+	      options.addOption(logDirPath);
+	      
+	      Option databaseFile = new Option("d", "database", true, 
+	    		  "Specify a database file to run reports on.");
+	      options.addOption(databaseFile);
+
+	
+	      CommandLineParser parser = new DefaultParser();
+	      HelpFormatter formatter = new HelpFormatter();
+	      CommandLine cmd;
+	
+	      try {
+	    	  
+	    	  // If there are no arguments, print help and exit
+	    	  if (args.length == 0) {
+		    	  System.out.println("A.R.M. Help\n");
+		    	  formatter.printHelp("arm", options );
+		    	  System.exit(0);
+		      }
+	    	  
+	    	  cmd = parser.parse(options, args);
+	    	  
+	    	  // Begin parsing any options that will cause the program to exit.
+	    	  
+		      if (cmd.hasOption("a")) {
+		    	  System.out.println("A.R.M. -- generate reports to assist the rentals manager."
+		    	  		+ "\n(c) 2020 by Tony Tambasco (tambascot@yahoo.com)."
+		    	  		+ "\nVersion: " + VERSION
+		    	  		+ "\nTry --help for more options.");
+		    	  System.exit(0);
+		      }
+		      
+		      else if (cmd.hasOption("h")) {
+		    	  System.out.println("SoftgoodSnapshot Help\n");
+		    	  formatter.printHelp("usage: java -jar SoftgoodSnaphsot.jar", options );
+		    	  System.exit(0);
+		      }
+		      
+		      // Parse non mutually exclusive arguments below
+		      	      
+
+
+		      if (cmd.hasOption("l")) {
+		    	  logDirectory = new File(cmd.getOptionValue("l"));
+		      }
+		      
+	      } catch (ParseException e) {
+	    	  System.out.println(e.getMessage());
+	    	  formatter.printHelp("utility-name", options);
+	    	  System.exit(1);
+	      }
+	      
 		
 		/*
 		 * Test all input files / directories to make sure they exist and are readable.
 		 */
 		
-		File directory = new File("C:\\\\Users\\production\\.SnapshotFiles");
-		
-		Map<String, String> updateLogReports = updateLogReport(directory);
+	      if (logDirectory != null) {
+	    	  updateLogReports = updateLogReport(logDirectory);
+	      }
 		
 		// Uncomment for debugging log report.
-		// updateLogReports.forEach((k, v) -> System.out.println((k + ": " + v)));
+		updateLogReports.forEach((k, v) -> System.out.println((k + ": " + v)));
 		
 		/*
 		 * Send an email to production incorporating the results of all reports into the message body.
