@@ -52,6 +52,7 @@ import com.google.api.services.gmail.GmailScopes;
 import com.google.api.services.gmail.model.Label;
 import com.google.api.services.gmail.model.ListLabelsResponse;
 import com.google.api.services.gmail.model.Message;
+import com.google.api.client.googleapis.services.json.*;
 import com.sun.xml.internal.messaging.saaj.packaging.mime.MessagingException;
 
 import javax.mail.Session;
