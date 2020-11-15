@@ -77,6 +77,7 @@ public class Arm {
 	private static final String VERSION = "1.0.0.0";
 	private static final List<String> SCOPES = Collections.singletonList(GmailScopes.GMAIL_LABELS);
     private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
+    private static final String APPLICATION_NAME = "A.R.M.";
 
 	static FilenameFilter logFilter = new FilenameFilter() {
         @Override
@@ -324,7 +325,7 @@ public class Arm {
 		File logDirectory					 = null;
 		Map<String, String> updateLogReports = null;
 		String recipientAddress 			 = null;
-		String tokenssFilePath	 		 	 = null;
+		String tokensFilePath	 		 	 = null;
 	    File jsonCredentialsFile			 = null;
 		
 		/*
@@ -412,7 +413,7 @@ public class Arm {
 				}
 				
 				recipientAddress 	= cmd.getOptionValue("e");
-				tokenssFilePath	 	= cmd.getOptionValue("t");
+				tokensFilePath	 	= cmd.getOptionValue("t");
 			    jsonCredentialsFile	= new File(cmd.getOptionValue("j"));
 				
 			}
@@ -441,8 +442,23 @@ public class Arm {
 	      
 	      if (recipientAddress != null) {
 	    	  
+	    	  String bodyText = "";
 	    	  
-	    	  
+	    	  try {
+	    		  final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+		          Gmail service = new Gmail.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT, jsonCredentialsFile, 
+		        		  tokensFilePath))
+		                  .setApplicationName(APPLICATION_NAME)
+		                  .build();
+		    	  updateLogReports.forEach((k, v) -> bodyText.concat(k + ": " + v + "\n"));
+	    		  MimeMessage message = createEmail(recipientAddress, "me", "Log Report", bodyText);
+	    		  Message emailMsg = createMessageWithEmail(message);
+	    		  sendMessage(service, "me", message);
+	    		  
+	    		  
+	    	  } catch (Exception e) {
+	    		  e.printStackTrace();
+	    	  }
 	    	  
 	      }
 	      
