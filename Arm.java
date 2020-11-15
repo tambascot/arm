@@ -240,8 +240,8 @@ public class Arm {
 		      }
 		      
 		      else if (cmd.hasOption("h")) {
-		    	  System.out.println("SoftgoodSnapshot Help\n");
-		    	  formatter.printHelp("usage: java -jar SoftgoodSnaphsot.jar", options );
+		    	  System.out.println("A.R.M. Help\n");
+		    	  formatter.printHelp("usage: java -jar arm.jar", options );
 		    	  System.exit(0);
 		      }
 		      
