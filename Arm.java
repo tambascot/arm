@@ -1,3 +1,4 @@
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
@@ -10,6 +11,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.SortedMap;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
@@ -43,12 +45,17 @@ import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.util.Base64;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.GmailScopes;
 import com.google.api.services.gmail.model.Label;
 import com.google.api.services.gmail.model.ListLabelsResponse;
+import com.google.api.services.gmail.model.Message;
+import com.sun.xml.internal.messaging.saaj.packaging.mime.MessagingException;
 
+import javax.mail.Session;
+import javax.mail.internet.*;
 
 /**
  * A.R.M. - Asst. Rentals Manager
@@ -230,6 +237,83 @@ public class Arm {
         LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(9001).build();
         return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
     }
+    
+    /**
+     * Create a MimeMessage using the parameters provided.
+     * copies from https://developers.google.com/gmail/api/guides/sending
+     *
+     * @param to email address of the receiver
+     * @param from email address of the sender, the mailbox account
+     * @param subject subject of the email
+     * @param bodyText body text of the email
+     * @return the MimeMessage to be used to send email
+     * @throws MessagingException
+     * @throws javax.mail.MessagingException 
+     * @throws AddressException 
+     */
+    public static MimeMessage createEmail(String to,
+                                          String from,
+                                          String subject,
+                                          String bodyText)
+            throws MessagingException, AddressException, javax.mail.MessagingException {
+        Properties props = new Properties();
+        Session session = Session.getDefaultInstance(props, null);
+
+        MimeMessage email = new MimeMessage(session);
+
+        email.setFrom(new InternetAddress(from));
+        email.addRecipient(javax.mail.Message.RecipientType.TO,
+                new InternetAddress(to));
+        email.setSubject(subject);
+        email.setText(bodyText);
+        return email;
+    }
+    
+    /**
+     * Create a message from an email.
+     * copied from https://developers.google.com/gmail/api/guides/sending
+     *
+     * @param emailContent Email to be set to raw of message
+     * @return a message containing a base64url encoded email
+     * @throws IOException
+     * @throws MessagingException
+     * @throws javax.mail.MessagingException 
+     */
+    public static Message createMessageWithEmail(MimeMessage emailContent)
+            throws MessagingException, IOException, javax.mail.MessagingException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        emailContent.writeTo(buffer);
+        byte[] bytes = buffer.toByteArray();
+        String encodedEmail = Base64.encodeBase64URLSafeString(bytes);
+        Message message = new Message();
+        message.setRaw(encodedEmail);
+        return message;
+    }
+    
+    /**
+     * Send an email from the user's mailbox to its recipient.
+     * copied from https://developers.google.com/gmail/api/guides/sending
+     *
+     * @param service Authorized Gmail API instance.
+     * @param userId User's email address. The special value "me"
+     * can be used to indicate the authenticated user.
+     * @param emailContent Email to be sent.
+     * @return The sent message
+     * @throws MessagingException
+     * @throws IOException
+     * @throws javax.mail.MessagingException 
+     */
+    public static Message sendMessage(Gmail service,
+                                      String userId,
+                                      MimeMessage emailContent)
+            throws MessagingException, IOException, javax.mail.MessagingException {
+        Message message = createMessageWithEmail(emailContent);
+        message = service.users().messages().send(userId, message).execute();
+
+        System.out.println("Message id: " + message.getId());
+        System.out.println(message.toPrettyString());
+        return message;
+    }
 	
 	public static void main(String[] args) {
 		
@@ -356,6 +440,7 @@ public class Arm {
 		 */
 	      
 	      if (recipientAddress != null) {
+	    	  
 	    	  
 	    	  
 	    	  
