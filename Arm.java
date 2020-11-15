@@ -197,67 +197,65 @@ public class Arm {
 		 * Process command line options. 
 		 */
 		
-		 Options options = new Options();
-
-	      Option about = new Option("a", "about", false, "Print about SoftgoodSnapshot and exit.");
-	      options.addOption(about);
-
-	      Option help = new Option("h", "help", false, "Print this help menu and exit.");
-	      options.addOption(help);  
-	      
-	      Option logDirPath = new Option("l", "logs", true, 
-	    		  "Specify a log directory.");
-	      options.addOption(logDirPath);
-	      
-	      Option databaseFile = new Option("d", "database", true, 
-	    		  "Specify a database file to run reports on.");
-	      options.addOption(databaseFile);
+		Options options = new Options();
+		
+		Option about = new Option("a", "about", false, "Print about SoftgoodSnapshot and exit.");
+		options.addOption(about);
+		
+		Option help = new Option("h", "help", false, "Print this help menu and exit.");
+		options.addOption(help);  
+		  
+		Option logDirPath = new Option("l", "logs", true, 
+				"Specify a log directory.");
+		options.addOption(logDirPath);
+		  
+		Option databaseFile = new Option("d", "database", true, 
+				"Specify a database file to run reports on.");
+		options.addOption(databaseFile);
 
 	
-	      CommandLineParser parser = new DefaultParser();
-	      HelpFormatter formatter = new HelpFormatter();
-	      CommandLine cmd;
+		CommandLineParser parser = new DefaultParser();
+		HelpFormatter formatter = new HelpFormatter();
+		CommandLine cmd;
 	
-	      try {
+		try {
 	    	  
-	    	  // If there are no arguments, print help and exit
-	    	  if (args.length == 0) {
-		    	  System.out.println("A.R.M. Help\n");
-		    	  formatter.printHelp("arm", options );
-		    	  System.exit(0);
-		      }
+			// If there are no arguments, print help and exit
+			if (args.length == 0) {
+				System.out.println("A.R.M. Help\n");
+				formatter.printHelp("arm", options );
+				System.exit(0);
+			}
 	    	  
-	    	  cmd = parser.parse(options, args);
+			cmd = parser.parse(options, args);
 	    	  
-	    	  // Begin parsing any options that will cause the program to exit.
+			// Begin parsing any options that will cause the program to exit.
 	    	  
-		      if (cmd.hasOption("a")) {
-		    	  System.out.println("A.R.M. -- generate reports to assist the rentals manager."
-		    	  		+ "\n(c) 2020 by Tony Tambasco (tambascot@yahoo.com)."
+			if (cmd.hasOption("a")) {
+				System.out.println("A.R.M. -- generate reports to assist the rentals manager."
+						+ "\n(c) 2020 by Tony Tambasco (tambascot@yahoo.com)."
 		    	  		+ "\nVersion: " + VERSION
 		    	  		+ "\nTry --help for more options.");
-		    	  System.exit(0);
-		      }
+				System.exit(0);
+			}
 		      
-		      else if (cmd.hasOption("h")) {
-		    	  System.out.println("A.R.M. Help\n");
-		    	  formatter.printHelp("usage: java -jar arm.jar", options );
-		    	  System.exit(0);
-		      }
+			else if (cmd.hasOption("h")) {
+				System.out.println("A.R.M. Help\n");
+				formatter.printHelp("usage: java -jar arm.jar", options );
+				System.exit(0);
+			}
 		      
-		      // Parse non mutually exclusive arguments below
+			// Parse non mutually exclusive arguments below
 		      	      
-
-
-		      if (cmd.hasOption("l")) {
-		    	  logDirectory = new File(cmd.getOptionValue("l"));
-		      }
+			if (cmd.hasOption("l")) {
+				logDirectory = new File(cmd.getOptionValue("l"));
+			}
 		      
-	      } catch (ParseException e) {
-	    	  System.out.println(e.getMessage());
-	    	  formatter.printHelp("utility-name", options);
-	    	  System.exit(1);
-	      }
+		} catch (ParseException e) {
+			System.out.println(e.getMessage());
+			formatter.printHelp("utility-name", options);
+			System.exit(1);
+		}
 	      
 		
 		/*
@@ -265,15 +263,21 @@ public class Arm {
 		 */
 		
 	      if (logDirectory != null) {
-	    	  updateLogReports = updateLogReport(logDirectory);
+	    	  
+	    	  if (logDirectory.canRead()) {
+	    		  updateLogReports = updateLogReport(logDirectory);
+	    	  }
 	      }
-		
-		// Uncomment for debugging log report.
-		updateLogReports.forEach((k, v) -> System.out.println((k + ": " + v)));
 		
 		/*
 		 * Send an email to production incorporating the results of all reports into the message body.
 		 */
+	      
+	      if (updateLogReports != null) {
+	    	  
+	    	  // Uncomment for debugging log report.
+	    	  updateLogReports.forEach((k, v) -> System.out.println((k + ": " + v)));
+	      }
 	}
 
 }
