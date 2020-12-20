@@ -203,34 +203,7 @@ public class Arm {
 	private boolean missingSoftgoodsReport(File softgoodsDatabase) {
 		
 		return true;
-	}
-	
-    /**
-     * Creates an authorized Credential object.
-     * @param HTTP_TRANSPORT The network HTTP Transport.
-     * @param JsonCredentialsFile The JSON file with Google App Console Credentials
-     * @param Tokens_DIRECTORY_PATH The path to the directory containing authentication tokens.
-     * @return An authorized Credential object.
-     * @throws IOException If the credentials.json file cannot be found.
-     */
-    private static Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT, 
-    		File JsonCredentialsFile, String TOKENS_DIRECTORY_PATH) throws IOException {
-        // Load client secrets.
-
-    	InputStream in = new FileInputStream(JsonCredentialsFile);
-        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
-
-        // Build flow and trigger user authorization request.
-        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
-                HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
-                .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
-                .setAccessType("offline")
-                .build();
-        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(9001).build();
-        return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
-    }
-    
-  
+	} 
 	
 	public static void main(String[] args) {
 		
