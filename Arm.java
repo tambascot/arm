@@ -472,7 +472,7 @@ public class Arm {
 		          Gmail service = builder.build();
 		         
 		    	  updateLogReports.forEach((k, v) -> bodyText.concat(k + ": " + v + "\n"));
-	    		  MimeMessage message = createEmail(recipientAddress, "arm@localhost", "Log Report: " + timeStamp, bodyText);
+	    		  MimeMessage message = createEmail(recipientAddress, "A.R.M.", "Log Report: " + timeStamp, bodyText);
 	    		  Message emailMsg = createMessageWithEmail(message);
 	    		  sendMessage(service, "me", message);
 	    		  
