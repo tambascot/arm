@@ -450,11 +450,15 @@ public class Arm {
 	    	  ByteArrayOutputStream baos = new ByteArrayOutputStream();
 	    	  PrintStream ps = new PrintStream(baos);
 	    	  
+	    	  String timeStamp = new SimpleDateFormat("EEE, d MMM yyyy").format(new java.util.Date());
+	    	  String greeting = "Dear Production,\n\n"
+	    	  		+ "Here is a report for " + timeStamp + "\n\n";
+	    		
 	    	  // Print output of reports to our output stream
 	    	  updateLogReports.forEach((k, v) -> ps.println((k + ": " + v)));
 	    	  
 	    	  // Transport
-	    	  String bodyText = baos.toString();
+	    	  String bodyText = greeting.concat(baos.toString());
 	    	  
 	    	  try {
 	    		  final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
@@ -468,7 +472,7 @@ public class Arm {
 		          Gmail service = builder.build();
 		         
 		    	  updateLogReports.forEach((k, v) -> bodyText.concat(k + ": " + v + "\n"));
-	    		  MimeMessage message = createEmail(recipientAddress, "me", "Log Report", bodyText);
+	    		  MimeMessage message = createEmail(recipientAddress, "arm@localhost", "Log Report: " + timeStamp, bodyText);
 	    		  Message emailMsg = createMessageWithEmail(message);
 	    		  sendMessage(service, "me", message);
 	    		  
