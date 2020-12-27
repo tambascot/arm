@@ -5,6 +5,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
@@ -67,7 +68,7 @@ import javax.mail.internet.*;
  * 
  * By Tony Tambasco <tambascot@yahoo.com>
  * 
- * This is Free Software published under the terms of the Gnu Public Liscence (GPL) v.2
+ * This is Free Software published under the terms of the Gnu Public License (GPL) v.2
  * 
  * @author Tony Tambasco
  * @author tambascot@yahoo.com
@@ -77,7 +78,7 @@ import javax.mail.internet.*;
 public class Arm {
 	
 	private static final String VERSION = "1.0.0.0";
-	private static final List<String> SCOPES = Collections.singletonList(GmailScopes.GMAIL_LABELS);
+	private static final List<String> SCOPES = Collections.singletonList(GmailScopes.GMAIL_SEND);
     private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
     private static final String APPLICATION_NAME = "A.R.M.";
 
@@ -229,7 +230,8 @@ public class Arm {
         // Load client secrets.
     	// C:\Users\production\.SnapshotFiles\SoftgoodSnapshot2Credentials.json
     	InputStream in = new FileInputStream(JsonCredentialsFile);
-        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
+        GoogleClientSecrets clientSecrets 
+        	= GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
 
         // Build flow and trigger user authorization request.
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
@@ -237,7 +239,7 @@ public class Arm {
                 .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
                 .setAccessType("offline")
                 .build();
-        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(9001).build();
+        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
         return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
     }
     
@@ -444,14 +446,27 @@ public class Arm {
 	      
 	      if (recipientAddress != null) {
 	    	  
-	    	  String bodyText = "";
+	    	  // Create a print stream to hold the output of our reports
+	    	  ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	    	  PrintStream ps = new PrintStream(baos);
+	    	  
+	    	  // Print output of reports to our output stream
+	    	  updateLogReports.forEach((k, v) -> ps.println((k + ": " + v)));
+	    	  
+	    	  // Transport
+	    	  String bodyText = baos.toString();
 	    	  
 	    	  try {
 	    		  final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-		          Gmail service = new Gmail.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT, jsonCredentialsFile, 
-		        		  tokensFilePath))
-		                  .setApplicationName(APPLICATION_NAME)
-		                  .build();
+
+	    		  Gmail.Builder builder = new Gmail.Builder(
+		        		  HTTP_TRANSPORT, 
+		        		  JSON_FACTORY, 
+		        		  getCredentials(HTTP_TRANSPORT, jsonCredentialsFile, 
+				        		  tokensFilePath));
+		          builder.setApplicationName(APPLICATION_NAME);
+		          Gmail service = builder.build();
+		         
 		    	  updateLogReports.forEach((k, v) -> bodyText.concat(k + ": " + v + "\n"));
 	    		  MimeMessage message = createEmail(recipientAddress, "me", "Log Report", bodyText);
 	    		  Message emailMsg = createMessageWithEmail(message);
@@ -467,7 +482,7 @@ public class Arm {
 	      if (updateLogReports != null) {
 	    	  
 	    	  // Uncomment for debugging log report.
-	    	  updateLogReports.forEach((k, v) -> System.out.println((k + ": " + v)));
+	    	  // updateLogReports.forEach((k, v) -> System.out.println((k + ": " + v)));
 	      }
 	}
 
