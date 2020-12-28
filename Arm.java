@@ -7,16 +7,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.StringReader;
+
 import java.text.SimpleDateFormat;
+
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.SortedMap;
-import java.util.logging.FileHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.List;
 
 import org.apache.commons.cli.CommandLine;
@@ -26,16 +23,12 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
-import org.w3c.dom.Element;
+
 import org.xml.sax.EntityResolver;
-
-// import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
-
-// import jdk.internal.org.xml.sax.InputSource;
-// import jdk.internal.org.xml.sax.SAXException;
 
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
@@ -50,11 +43,7 @@ import com.google.api.client.util.Base64;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.GmailScopes;
-import com.google.api.services.gmail.model.Label;
-import com.google.api.services.gmail.model.ListLabelsResponse;
 import com.google.api.services.gmail.model.Message;
-import com.google.api.client.googleapis.services.json.*;
-// import com.sun.xml.internal.messaging.saaj.packaging.mime.MessagingException;
 
 import javax.mail.MessagingException;
 import javax.mail.Session;
@@ -89,8 +78,6 @@ public class Arm {
         }
     };
     
-	
-	@SuppressWarnings("deprecation")
 	private static Map<String, String> updateLogReport(File logDirectory) {
 		
 		Map<String, String> logReport = new HashMap<String, String>();
@@ -331,6 +318,12 @@ public class Arm {
 		String recipientAddress 			 = null;
 		String tokensFilePath	 		 	 = null;
 	    File jsonCredentialsFile			 = null;
+	    
+	    // Create a print stream to hold the output of our reports
+  	  	ByteArrayOutputStream baos = new ByteArrayOutputStream();
+  	  	PrintStream ps = new PrintStream(baos);
+  	  	
+  	  	String dateStamp = new SimpleDateFormat("EEE, d MMM yyyy").format(new java.util.Date());
 		
 		/*
 		 * Process command line options. 
@@ -353,11 +346,11 @@ public class Arm {
 		options.addOption(emailReport);
 		
 		Option tokenDirPath = new Option("t", "token", true, 
-				"Specify a directory for authentication tokens (other than default). Required for sending email.");
+				"Specify a directory for authentication tokens. Required for sending email.");
 		options.addOption(tokenDirPath);
 	      
 		Option jsonFile = new Option("j", "json", true, 
-				"Specify a JSON file with Google Application authentication data (other than default)."
+				"Specify a JSON file with Google Application OAuth2 credentials."
 					+ " Required for sending email.");
 		options.addOption(jsonFile);
 		
@@ -367,7 +360,6 @@ public class Arm {
 		options.addOption(databaseFile);
 		*/
 
-	
 		CommandLineParser parser = new DefaultParser();
 		HelpFormatter formatter = new HelpFormatter();
 		CommandLine cmd;
@@ -437,6 +429,12 @@ public class Arm {
 	    	  
 	    	  if (logDirectory.canRead()) {
 	    		  updateLogReports = updateLogReport(logDirectory);
+	    		  
+	    		  // Now that we've read some logs, print that to our output stream
+	    		  ps.println("Log Reports:");
+		    	  ps.println("------------");
+		    	  updateLogReports.forEach((k, v) -> ps.println((k + ": " + v)));
+		    	  ps.println("------------\n");
 	    	  }
 	      }
 		
@@ -445,20 +443,20 @@ public class Arm {
 		 */
 	      
 	      if (recipientAddress != null) {
-	    	  
-	    	  // Create a print stream to hold the output of our reports
-	    	  ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	    	  PrintStream ps = new PrintStream(baos);
-	    	  
-	    	  String timeStamp = new SimpleDateFormat("EEE, d MMM yyyy").format(new java.util.Date());
-	    	  String greeting = "Dear Production,\n\n"
-	    	  		+ "Here is a report for " + timeStamp + "\n\n";
-	    		
-	    	  // Print output of reports to our output stream
-	    	  updateLogReports.forEach((k, v) -> ps.println((k + ": " + v)));
+	    	 
+	    	  // Print head of reports to our output stream
+	  		  String messageHead = "Dear Production,\n\n"
+	  				  + "Here is a report for " + dateStamp + "\n\n";
+
+	    	  // Print tail of report to output stream. The results of all reports should have
+	  		  // already been written there. 
+	  		  
+	    	  ps.println("##############");
+	    	  ps.println("End of Reports");
+	    	  ps.println("##############\n");
 	    	  
 	    	  // Transport
-	    	  String bodyText = greeting.concat(baos.toString());
+	    	  String bodyText = messageHead.concat(baos.toString());
 	    	  
 	    	  try {
 	    		  final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
@@ -472,7 +470,7 @@ public class Arm {
 		          Gmail service = builder.build();
 		         
 		    	  updateLogReports.forEach((k, v) -> bodyText.concat(k + ": " + v + "\n"));
-	    		  MimeMessage message = createEmail(recipientAddress, "A.R.M.", "Log Report: " + timeStamp, bodyText);
+	    		  MimeMessage message = createEmail(recipientAddress, "A.R.M.", "A.R.M. Report: " + dateStamp, bodyText);
 	    		  Message emailMsg = createMessageWithEmail(message);
 	    		  sendMessage(service, "me", message);
 	    		  
