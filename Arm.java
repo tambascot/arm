@@ -23,8 +23,9 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.commons.text.StringEscapeUtils.*;
+
 
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
