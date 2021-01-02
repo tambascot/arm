@@ -23,6 +23,8 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils.*;
 
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
@@ -318,12 +320,14 @@ public class Arm {
 		String recipientAddress 			 = null;
 		String tokensFilePath	 		 	 = null;
 	    File jsonCredentialsFile			 = null;
+	    String dateStamp 					 = new SimpleDateFormat("EEE, d MMM yyyy").format(new java.util.Date());
+	    String emailSubjectStr	 			 = "ARM Report " + dateStamp;
 	    
 	    // Create a print stream to hold the output of our reports
   	  	ByteArrayOutputStream baos = new ByteArrayOutputStream();
   	  	PrintStream ps = new PrintStream(baos);
   	  	
-  	  	String dateStamp = new SimpleDateFormat("EEE, d MMM yyyy").format(new java.util.Date());
+  	  	
 		
 		/*
 		 * Process command line options. 
@@ -341,9 +345,17 @@ public class Arm {
 				"Specify a log directory.");
 		options.addOption(logDirPath);
 		
-		Option emailReport = new Option("e", "email", true, 
+		Option emailReport = new Option("e", "email-address", true, 
 				"Specify an email address to send the report to.");
 		options.addOption(emailReport);
+		
+		Option emailMessage = new Option("m", "email-message", true, 
+				"Specify an message body to prepend to any reports.");
+		options.addOption(emailMessage);
+		
+		Option emailSubjectOption = new Option("s", "email-subject", true, 
+				"Specify a custom message subject for email messages, other than the default.");
+		options.addOption(emailSubjectOption);
 		
 		Option tokenDirPath = new Option("t", "token", true, 
 				"Specify a directory for authentication tokens. Required for sending email.");
@@ -411,6 +423,22 @@ public class Arm {
 				recipientAddress 	= cmd.getOptionValue("e");
 				tokensFilePath	 	= cmd.getOptionValue("t");
 			    jsonCredentialsFile	= new File(cmd.getOptionValue("j"));
+			    
+			    /*
+			     * There are also some optional arguments to parse when sending an email. We'll do 
+			     * those here...
+			     */
+			    
+			    // Message body
+			    if (cmd.hasOption("m")) {
+			    	String messageBody = StringEscapeUtils.unescapeJava(cmd.getOptionValue("m")); 
+			    	ps.println(messageBody);
+			    }
+			    
+			    // Message subject
+			    if (cmd.hasOption("s")) {
+			    	emailSubjectStr = cmd.getOptionValue("s");
+			    }
 				
 			}
 		      
@@ -445,8 +473,8 @@ public class Arm {
 	      if (recipientAddress != null) {
 	    	 
 	    	  // Print head of reports to our output stream
-	  		  String messageHead = "Dear Production,\n\n"
-	  				  + "Here is a report for " + dateStamp + "\n\n";
+	  		  /*String messageHead = "Dear Production,\n\n"
+	  				  + "Here is a report for " + dateStamp + "\n\n"; */
 
 	    	  // Print tail of report to output stream. The results of all reports should have
 	  		  // already been written there. 
@@ -456,7 +484,8 @@ public class Arm {
 	    	  ps.println("##############\n");
 	    	  
 	    	  // Transport
-	    	  String bodyText = messageHead.concat(baos.toString());
+	    	  //String bodyText = messageHead.concat(baos.toString());
+	    	  String bodyText = baos.toString();
 	    	  
 	    	  try {
 	    		  final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
@@ -470,8 +499,8 @@ public class Arm {
 		          Gmail service = builder.build();
 		         
 		    	  updateLogReports.forEach((k, v) -> bodyText.concat(k + ": " + v + "\n"));
-	    		  MimeMessage message = createEmail(recipientAddress, "A.R.M.", "A.R.M. Report: " + dateStamp, bodyText);
-	    		  Message emailMsg = createMessageWithEmail(message);
+	    		  MimeMessage message = createEmail(recipientAddress, "A.R.M.", emailSubjectStr, bodyText);
+	    		  // Message emailMsg = createMessageWithEmail(message);
 	    		  sendMessage(service, "me", message);
 	    		  
 	    		  
