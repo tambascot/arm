@@ -64,17 +64,17 @@ import javax.mail.internet.*;
  * 
  * @author Tony Tambasco
  * @author tambascot@yahoo.com
+ * @version 0.1.0.0
  *
- */
-
-public class Arm {
+ */public class Arm {
 	
-	private static final String VERSION = "1.0.0.0";
+
+	private static final String VERSION = "0.1.0.0";
 	private static final List<String> SCOPES = Collections.singletonList(GmailScopes.GMAIL_SEND);
     private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
     private static final String APPLICATION_NAME = "A.R.M.";
-
-	static FilenameFilter logFilter = new FilenameFilter() {
+    
+    static FilenameFilter logFilter = new FilenameFilter() {
         @Override
         public boolean accept(File f, String name) {
             return name.endsWith(".log");
@@ -322,13 +322,11 @@ public class Arm {
 		String tokensFilePath	 		 	 = null;
 	    File jsonCredentialsFile			 = null;
 	    String dateStamp 					 = new SimpleDateFormat("EEE, d MMM yyyy").format(new java.util.Date());
-	    String emailSubjectStr	 			 = "ARM Report " + dateStamp;
+	    String emailSubjectStr	 			 = "A.R.M. Report " + dateStamp;
 	    
 	    // Create a print stream to hold the output of our reports
   	  	ByteArrayOutputStream baos = new ByteArrayOutputStream();
-  	  	PrintStream ps = new PrintStream(baos);
-  	  	
-  	  	
+  	  	PrintStream ps = new PrintStream(baos);	  	
 		
 		/*
 		 * Process command line options. 
