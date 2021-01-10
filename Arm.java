@@ -66,7 +66,8 @@ import javax.mail.internet.*;
  * @author tambascot@yahoo.com
  * @version 0.1.0.0
  *
- */public class Arm {
+ */
+public class Arm {
 	
 
 	private static final String VERSION = "0.1.0.0";
