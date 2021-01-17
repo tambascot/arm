@@ -1,0 +1,41 @@
+A.R.M. -- generate reports to assist the rentals manager.
+(c) 2021 by Tony Tambasco (tambascot@yahoo.com).
+Version: 0.1.0.0
+
+usage: usage: java -jar arm.jar
+ -a,--about                 Print about A.R.M. and exit.
+ -e,--email-address <arg>   Specify an email address to send the report
+                            to.
+ -h,--help                  Print this help menu and exit.
+ -j,--json <arg>            Specify a JSON file with Google Application
+                            OAuth2 credentials. Required for sending
+                            email.
+ -l,--logs <arg>            Specify a log directory.
+ -m,--email-message <arg>   Specify an message body to prepend to any
+                            reports.
+ -s,--email-subject <arg>   Specify a custom message subject for email
+                            messages, other than the default.
+ -t,--token <arg>           Specify a directory for authentication tokens.
+                            Required for sending email.
+                            
+A.R.M. is a report manager designed to support running a variety of reports, 
+with the intention that those will be emailed to a designated user. It is designed to
+be flexible, and able to generate different types of reports, with different email recipients,
+subjects, and messages supplied at run time. This will ultimately allow for a flexible framework
+of reporting, which can be integrated with the system task scheduler. 
+
+A.R.M. uses Gmail as its email client, and requires the user to grant it access to send
+mail. The easiest way to do this is to either run it from the command line, or running
+it manually through the system task scheduler on the first instance to give the program
+proper authorization. Any directory can be used as the token directory, provided the user
+has read/write access to it. In order to use Gmail, a JSON file with ARM's OAuth2 credentials
+is required, which may be downloaded from the Google App console. You may create your own
+instance in the Google App Console; A.R.M. requires enabling "Gmail Send" permissions. As of
+v.0.1.0.0, no other permissions are required. 
+
+In the event that email credentials are not provided, A.R.M. will output to the console. 
+
+
+RELEASE HISTORY
+---------------
+17 Jan 2021 - v.0.1.0.0 - First production release with limited functionality
